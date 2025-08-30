@@ -168,7 +168,7 @@ export function CommunicationLogTable() {
 
   useEffect(() => {
     const fetchCalls = async () => {
-      const API_URL = "http://127.0.0.1:5000"
+      const API_URL = "http://51.210.255.18:5000"
       const isV0Environment =
         !API_URL || (typeof window !== "undefined" && window.location.hostname.includes("vercel.app"))
 
