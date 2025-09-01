@@ -60,7 +60,7 @@ export function CompanyDashboard() {
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Clear Sky Software</CardTitle>
+              <CardTitle className="text-lg">Unknown Company</CardTitle>
             </div>
             <div className="flex gap-2 mt-2">
               <Badge variant="secondary" className="bg-blue-100 text-blue-800">
@@ -204,7 +204,7 @@ export function CompanyDashboard() {
               </div>
               <div className="text-center">
                 <div className="text-sm text-gray-600">{currentSourceId || "unknown"} is Calling...</div>
-                <div className="font-semibold">Clear Sky Software</div>
+                <div className="font-semibold">Unknown Company</div>
                 <div className="mt-4 space-y-2">
                   <Button className="w-full bg-orange-500 hover:bg-orange-600">Answer</Button>
                   <div className="flex gap-2">

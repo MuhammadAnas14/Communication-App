@@ -25,7 +25,7 @@ export function Navigation() {
             <AvatarFallback className="bg-blue-500 text-white text-sm">A</AvatarFallback>
           </Avatar>
           <div>
-            <p className="text-sm font-medium">Good Morning, Admin</p>
+            <p className="text-sm font-medium">Good Morning, Rory</p>
             <p className="text-xs text-gray-500">Simplify how you manage calls and messages</p>
           </div>
         </div>

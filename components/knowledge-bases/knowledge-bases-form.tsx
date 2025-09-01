@@ -1,15 +1,23 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
-import { Upload } from "lucide-react"
+import { Upload, CheckCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Progress } from "@/components/ui/progress"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 interface FileUploadSectionProps {
   title: string
   description: string
   onFileUpload: (files: FileList) => void
+}
+
+interface ProcessingStep {
+  name: string
+  description: string
+  completed: boolean
+  progress?: number
 }
 
 function FileUploadSection({ title, description, onFileUpload }: FileUploadSectionProps) {
@@ -77,35 +85,206 @@ function FileUploadSection({ title, description, onFileUpload }: FileUploadSecti
   )
 }
 
+function ProcessingModal({
+  isOpen,
+  onClose,
+  fileName,
+  steps,
+}: {
+  isOpen: boolean
+  onClose: () => void
+  fileName: string
+  steps: ProcessingStep[]
+}) {
+  const completedSteps = steps.filter((step) => step.completed).length
+  const totalSteps = steps.length
+  const overallProgress = (completedSteps / totalSteps) * 100
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            Processing (auto-chunking)
+            <div className="text-sm text-gray-500">Progress</div>
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <Progress value={overallProgress} className="w-full" />
+
+          <div className="space-y-3">
+            {steps.map((step, index) => (
+              <div key={index} className="flex items-start gap-3">
+                <div className={`w-3 h-3 rounded-full mt-1 ${step.completed ? "bg-blue-500" : "bg-gray-300"}`} />
+                <div className="flex-1">
+                  <div className="font-medium text-sm">{step.name}</div>
+                  <div className="text-sm text-gray-600">{step.description}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2 pt-4">
+            <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+              <div className="w-3 h-3 bg-white rounded-full" />
+            </div>
+            <span className="text-sm font-medium">Enable Semantic Re-Chunking</span>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function SuccessModal({
+  isOpen,
+  onClose,
+  fileName,
+}: {
+  isOpen: boolean
+  onClose: () => void
+  fileName: string
+}) {
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-sm">
+        <div className="text-center py-6">
+          <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">Upload Successful!</h3>
+          <p className="text-gray-600 mb-4">Your file "{fileName}" has been uploaded and processed successfully.</p>
+          <Button onClick={onClose} className="w-full">
+            Continue
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 export function KnowledgeBasesForm() {
-  const handleGeneralUpload = (files: FileList) => {
-    console.log(
-      "[v0] General knowledge files uploaded:",
-      Array.from(files).map((f) => f.name),
-    )
-    // Handle general knowledge file upload
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
+  const [currentFileName, setCurrentFileName] = useState("")
+  const [processingSteps, setProcessingSteps] = useState<ProcessingStep[]>([])
+  const [chunkProgress, setChunkProgress] = useState({ current: 0, total: 48 })
+
+  const uploadToBackend = async (file: File, type: "general" | "specific") => {
+    const formData = new FormData()
+    formData.append("file", file)
+
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+      const response = await fetch(`${apiUrl}/kb_sync`, {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!response.ok) {
+        throw new Error(`Upload failed: ${response.statusText}`)
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error("[v0] Upload error:", error)
+      throw error
+    }
   }
 
-  const handleSpecificUpload = (files: FileList) => {
-    console.log(
-      "[v0] Specific knowledge files uploaded:",
-      Array.from(files).map((f) => f.name),
-    )
-    // Handle specific knowledge file upload
+  const simulateProcessing = () => {
+    const steps: ProcessingStep[] = [
+      { name: "Auto-Chunking", description: "0 of 48 chunks completed", completed: false },
+      { name: "Content Extraction", description: "Extracting tables, images, headings", completed: false },
+      { name: "Entity Recognition", description: "Identifying key entities, dates, locations", completed: false },
+      { name: "Indexing for Search", description: "Indexing completed", completed: false },
+    ]
+
+    setProcessingSteps(steps)
+    setChunkProgress({ current: 0, total: 48 })
+
+    const chunkInterval = setInterval(() => {
+      setChunkProgress((prev) => {
+        const newCurrent = Math.min(prev.current + 1, prev.total)
+
+        setProcessingSteps((currentSteps) =>
+          currentSteps.map((step, index) =>
+            index === 0 ? { ...step, description: `${newCurrent} of ${prev.total} chunks completed` } : step,
+          ),
+        )
+
+        if (newCurrent >= prev.total) {
+          clearInterval(chunkInterval)
+        }
+
+        return { ...prev, current: newCurrent }
+      })
+    }, 10000 / 48)
+
+    steps.forEach((_, index) => {
+      setTimeout(
+        () => {
+          setProcessingSteps((prev) => prev.map((step, i) => (i <= index ? { ...step, completed: true } : step)))
+
+          if (index === steps.length - 1) {
+            setTimeout(() => {
+              setIsProcessing(false)
+              setShowSuccess(true)
+            }, 2000)
+          }
+        },
+        (index + 1) * 10000,
+      )
+    })
+  }
+
+  const handleGeneralUpload = async (files: FileList) => {
+    const file = files[0]
+    setCurrentFileName(file.name)
+    setIsProcessing(true)
+
+    try {
+      simulateProcessing()
+      await uploadToBackend(file, "general")
+      console.log("[v0] General knowledge file uploaded:", file.name)
+    } catch (error) {
+      console.error("[v0] Upload failed:", error)
+      setIsProcessing(false)
+    }
+  }
+
+  const handleSpecificUpload = async (files: FileList) => {
+    const file = files[0]
+    setCurrentFileName(file.name)
+    setIsProcessing(true)
+
+    try {
+      simulateProcessing()
+      await uploadToBackend(file, "specific")
+      console.log("[v0] Specific knowledge file uploaded:", file.name)
+    } catch (error) {
+      console.error("[v0] Upload failed:", error)
+      setIsProcessing(false)
+    }
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
-      <FileUploadSection
-        title="General Knowledge"
-        description="Shared across clients"
-        onFileUpload={handleGeneralUpload}
-      />
-      <FileUploadSection
-        title="Specific Knowledge"
-        description="Client-or sector-specific"
-        onFileUpload={handleSpecificUpload}
-      />
-    </div>
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+        <FileUploadSection
+          title="General Knowledge"
+          description="Shared across clients"
+          onFileUpload={handleGeneralUpload}
+        />
+        <FileUploadSection
+          title="Specific Knowledge"
+          description="Client-or sector-specific"
+          onFileUpload={handleSpecificUpload}
+        />
+      </div>
+
+      <ProcessingModal isOpen={isProcessing} onClose={() => {}} fileName={currentFileName} steps={processingSteps} />
+
+      <SuccessModal isOpen={showSuccess} onClose={() => setShowSuccess(false)} fileName={currentFileName} />
+    </>
   )
 }
