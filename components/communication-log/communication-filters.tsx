@@ -6,12 +6,12 @@ import { cn } from "@/lib/utils"
 
 const filterTabs = [
   { id: "all", label: "All", count: null },
-  { id: "email", label: "Email", count: 12 },
-  { id: "sms", label: "SMS", count: 5 },
-  { id: "voice", label: "Voice", count: 8 },
-  { id: "web", label: "Web", count: 3 },
-  { id: "facebook", label: "Facebook", count: 2 },
-  { id: "linkedin", label: "LinkedIn", count: 1 },
+  { id: "email", label: "Email", count: null },
+  { id: "sms", label: "SMS", count: null },
+  { id: "voice", label: "Voice", count: null },
+  { id: "web", label: "Web", count: null },
+  { id: "facebook", label: "Facebook", count: null },
+  { id: "linkedin", label: "LinkedIn", count: null },
 ]
 
 export function CommunicationFilters() {
