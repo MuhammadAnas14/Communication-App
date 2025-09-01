@@ -69,9 +69,9 @@ export function CompanyDashboard() {
               <Badge variant="secondary" className="bg-green-100 text-green-800">
                 Horticulture
               </Badge>
-              <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+              {/* <Badge variant="secondary" className="bg-purple-100 text-purple-800">
                 Tools
-              </Badge>
+              </Badge> */}
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -137,10 +137,10 @@ export function CompanyDashboard() {
             <Button variant="outline" className="w-full mb-2 bg-transparent">
               Behavioural Data
             </Button>
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <div className="h-8 bg-gray-100 rounded"></div>
               <div className="h-8 bg-gray-100 rounded"></div>
-            </div>
+            </div> */}
           </CardContent>
         </Card>
 
@@ -203,8 +203,8 @@ export function CompanyDashboard() {
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-sm text-gray-600">Sarah Lee is Calling...</div>
-                <div className="font-semibold">Greenbuild Inc.</div>
+                <div className="text-sm text-gray-600">{currentSourceId || "unknown"} is Calling...</div>
+                <div className="font-semibold">Clear Sky Software</div>
                 <div className="mt-4 space-y-2">
                   <Button className="w-full bg-orange-500 hover:bg-orange-600">Answer</Button>
                   <div className="flex gap-2">
