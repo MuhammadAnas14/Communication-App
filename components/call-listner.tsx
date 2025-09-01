@@ -8,7 +8,7 @@ export function CallListener() {
 
   useEffect(() => {
     const API_URL = "http://51.210.255.18:5000"
-    const eventSource = new EventSource(`${apiUrl}/api/events`)
+    const eventSource = new EventSource(`${API_URL}/api/events`)
 
     eventSource.addEventListener("incoming_call", (event) => {
       try {
