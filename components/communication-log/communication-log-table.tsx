@@ -170,14 +170,44 @@ export function CommunicationLogTable({ sourceId }: CommunicationLogTableProps) 
   const [loading, setLoading] = useState(true)
   const [dataSource, setDataSource] = useState<"api" | "sample">("sample")
 
+  const normalizeSourceId = (id: string): string => {
+    // Remove all non-alphanumeric characters and convert to lowercase
+    return id.replace(/[^a-zA-Z0-9]/g, "").toLowerCase()
+  }
+
+  const sourceIdsMatch = (id1: string, id2: string): boolean => {
+    const normalized1 = normalizeSourceId(id1)
+    const normalized2 = normalizeSourceId(id2)
+
+    // Check exact match first
+    if (normalized1 === normalized2) return true
+
+    // Check if one contains the other (for partial matches)
+    if (normalized1.includes(normalized2) || normalized2.includes(normalized1)) return true
+
+    return false
+  }
+
   useEffect(() => {
     const fetchCalls = async () => {
-       const API_URL = "http://51.210.255.18:5000"
+      const API_URL = "http://51.210.255.18:5000"
       const isV0Environment =
         !API_URL || (typeof window !== "undefined" && window.location.hostname.includes("vercel.app"))
 
+      console.log("[v0] Filtering calls for sourceId:", sourceId)
+      console.log("[v0] API_URL:", API_URL)
+      console.log("[v0] isV0Environment:", isV0Environment)
+
       if (isV0Environment) {
-        const filteredData = sourceId ? sampleCallData.filter((call) => call.sourceId === sourceId) : sampleCallData
+        const filteredData = sourceId
+          ? sampleCallData.filter((call) => {
+              const matches = sourceIdsMatch(call.sourceId, sourceId)
+              console.log("[v0] Comparing:", call.sourceId, "with", sourceId, "matches:", matches)
+              return matches
+            })
+          : sampleCallData
+
+        console.log("[v0] Filtered data count:", filteredData.length)
         setCallData(filteredData)
         setDataSource("sample")
         setLoading(false)
@@ -185,19 +215,36 @@ export function CommunicationLogTable({ sourceId }: CommunicationLogTableProps) 
       }
 
       try {
-        const endpoint = sourceId ? `/api/calls/${sourceId}` : "/api/calls"
-        const response = await fetch(`${API_URL}${endpoint}`)
+        const endpoint = sourceId ? `/api/calls/${encodeURIComponent(sourceId)}` : "/api/calls"
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+
+        console.log("[v0] Fetching from:", `${API_URL}${endpoint}`)
+
+        const response = await fetch(`${API_URL}${endpoint}`, {
+          signal: controller.signal,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+
+        clearTimeout(timeoutId)
 
         if (!response.ok) {
+          console.log("[v0] API response not ok:", response.status, response.statusText)
           throw new Error(`HTTP error! status: ${response.status}`)
         }
 
         const data = await response.json()
+        console.log("[v0] API data received:", data)
         setCallData(data.calls || [])
         setDataSource("api")
       } catch (err) {
-        console.error("Error fetching calls:", err)
-        const filteredData = sourceId ? sampleCallData.filter((call) => call.sourceId === sourceId) : sampleCallData
+        console.error("[v0] Error fetching calls:", err)
+        const filteredData = sourceId
+          ? sampleCallData.filter((call) => sourceIdsMatch(call.sourceId, sourceId))
+          : sampleCallData
+        console.log("[v0] Using sample data fallback, filtered count:", filteredData.length)
         setCallData(filteredData)
         setDataSource("sample")
       } finally {
@@ -206,7 +253,8 @@ export function CommunicationLogTable({ sourceId }: CommunicationLogTableProps) 
     }
 
     fetchCalls()
-  }, [sourceId])
+  }, [])
+
 
   const handleSummaryClick = (communication: any) => {
     setSelectedCommunication(communication)

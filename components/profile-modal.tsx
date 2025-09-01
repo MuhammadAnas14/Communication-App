@@ -1,9 +1,10 @@
 "use client"
 
 import { useProfile } from "../app/contexts/profile-contexts"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { CompanyDashboard } from "@/components/profile/company-dashboard"
 import { ProfileForm } from "@/components/profile/profile-form"
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
 
 export function ProfileModal() {
   const { isProfileOpen, profileExists, closeProfile } = useProfile()
@@ -11,6 +12,12 @@ export function ProfileModal() {
   return (
     <Dialog open={isProfileOpen} onOpenChange={closeProfile}>
       <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto p-0">
+        <DialogHeader>
+          <VisuallyHidden>
+            <DialogTitle>{profileExists ? "Company Profile Dashboard" : "Create New Profile"}</DialogTitle>
+          </VisuallyHidden>
+        </DialogHeader>
+
         {profileExists ? (
           <CompanyDashboard />
         ) : (
