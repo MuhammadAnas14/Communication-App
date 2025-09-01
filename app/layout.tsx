@@ -4,6 +4,9 @@ import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 import "./globals.css"
 import { Navigation } from "@/components/navigation"
+import { ProfileProvider } from "./contexts/profile-contexts"
+import { ProfileModal } from "@/components/profile-modal"
+import { CallListener } from "../components/call-listner"
 
 export const metadata: Metadata = {
   title: "Communication Management System",
@@ -28,10 +31,14 @@ html {
         `}</style>
       </head>
       <body>
-        <div className="min-h-screen bg-gray-50">
-          <Navigation />
-          <main className="container mx-auto px-4 py-6">{children}</main>
-        </div>
+        <ProfileProvider>
+          <div className="min-h-screen bg-gray-50">
+            <Navigation />
+            <main className="container mx-auto px-4 py-6">{children}</main>
+            <ProfileModal />
+            <CallListener />
+          </div>
+        </ProfileProvider>
       </body>
     </html>
   )

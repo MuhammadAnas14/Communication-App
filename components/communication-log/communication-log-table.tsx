@@ -21,6 +21,10 @@ interface CallData {
   subcategory: string
 }
 
+interface CommunicationLogTableProps {
+  sourceId?: string | null
+}
+
 const sampleCallData: CallData[] = [
   {
     id: "COMM-001234",
@@ -159,7 +163,7 @@ const getIcon = (type: string) => {
   }
 }
 
-export function CommunicationLogTable() {
+export function CommunicationLogTable({ sourceId }: CommunicationLogTableProps) {
   const [selectedCommunication, setSelectedCommunication] = useState<any>(null)
   const [popupOpen, setPopupOpen] = useState(false)
   const [callData, setCallData] = useState<CallData[]>([])
@@ -168,31 +172,33 @@ export function CommunicationLogTable() {
 
   useEffect(() => {
     const fetchCalls = async () => {
-      const API_URL = "http://51.210.255.18:5000"
+      const API_URL = process.env.NEXT_PUBLIC_API_URL
       const isV0Environment =
         !API_URL || (typeof window !== "undefined" && window.location.hostname.includes("vercel.app"))
 
       if (isV0Environment) {
-        setCallData(sampleCallData)
+        const filteredData = sourceId ? sampleCallData.filter((call) => call.sourceId === sourceId) : sampleCallData
+        setCallData(filteredData)
         setDataSource("sample")
         setLoading(false)
         return
       }
 
       try {
-        const response = await fetch(`${API_URL}/api/calls`)
+        const endpoint = sourceId ? `/api/calls/${sourceId}` : "/api/calls"
+        const response = await fetch(`${API_URL}${endpoint}`)
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
 
         const data = await response.json()
-        console.log("Fetched calls:", data.calls)
         setCallData(data.calls || [])
         setDataSource("api")
       } catch (err) {
         console.error("Error fetching calls:", err)
-        setCallData(sampleCallData)
+        const filteredData = sourceId ? sampleCallData.filter((call) => call.sourceId === sourceId) : sampleCallData
+        setCallData(filteredData)
         setDataSource("sample")
       } finally {
         setLoading(false)
@@ -200,7 +206,7 @@ export function CommunicationLogTable() {
     }
 
     fetchCalls()
-  }, [])
+  }, [sourceId])
 
   const handleSummaryClick = (communication: any) => {
     setSelectedCommunication(communication)
@@ -221,7 +227,8 @@ export function CommunicationLogTable() {
         {dataSource === "sample" && (
           <div className="bg-blue-50 border-b border-blue-200 px-4 py-2">
             <div className="text-blue-800 text-sm">
-              📋 Showing sample communication data - Connect Python backend to see real call logs
+              📋 Showing {sourceId ? `filtered sample data for ${sourceId}` : "sample communication data"} - Connect
+              Python backend to see real call logs
             </div>
           </div>
         )}
@@ -290,7 +297,7 @@ export function CommunicationLogTable() {
                       className="h-auto p-0 text-blue-600 hover:text-blue-800 text-sm"
                       onClick={() => handleSummaryClick(item)}
                     >
-                      {item.aiSummary} | Summary
+                      Summary
                     </Button>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-500">{item.commId}</td>

@@ -6,22 +6,51 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { CommunicationLogTable } from "@/components/communication-log/communication-log-table"
+import { ProfileForm } from "./profile-form"
 import { Phone, Mail, Globe, Settings, ChevronDown, User } from "lucide-react"
+import { useProfile } from "../../app/contexts/profile-contexts"
 
 export function CompanyDashboard() {
   const [showCallNotification, setShowCallNotification] = useState(true)
+  const [showProfileForm, setShowProfileForm] = useState(false)
+  const { currentSourceId } = useProfile()
+
+  const handleEditClick = () => {
+    setShowProfileForm(true)
+  }
+
+  const handleAddClick = () => {
+    setShowProfileForm(true)
+  }
+
+  const handleBackToDashboard = () => {
+    setShowProfileForm(false)
+  }
+
+  if (showProfileForm) {
+    return (
+      <div className="p-6">
+        <div className="mb-4">
+          <Button variant="outline" onClick={handleBackToDashboard}>
+            ← Back to Dashboard
+          </Button>
+        </div>
+        <ProfileForm />
+      </div>
+    )
+  }
 
   const engagementMetrics = [
-    { title: "Web", value: "85%", color: "bg-red-500" },
-    { title: "Phone", value: "92%", color: "bg-red-500" },
-    { title: "Email", value: "78%", color: "bg-red-500" },
-    { title: "Phone", value: "88%", color: "bg-red-500" },
+    { title: "Web", value: "0", color: "bg-red-500" },
+    { title: "Phone", value: "100", color: "bg-red-500" },
+    { title: "Email", value: "0", color: "bg-red-500" },
+    { title: "Phone", value: "0", color: "bg-red-500" },
   ]
 
   const businessMetrics = [
-    { title: "Engagement Score", value: "8.5" },
-    { title: "Transactions", value: "24" },
-    { title: "Elasticity Score", value: "7.2" },
+    { title: "Engagement Score", value: "0" },
+    { title: "Transactions", value: "0" },
+    { title: "Elasticity Score", value: "0" },
   ]
 
   return (
@@ -31,7 +60,7 @@ export function CompanyDashboard() {
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Greenbuild Inc.</CardTitle>
+              <CardTitle className="text-lg">Company Name</CardTitle>
             </div>
             <div className="flex gap-2 mt-2">
               <Badge variant="secondary" className="bg-blue-100 text-blue-800">
@@ -47,19 +76,19 @@ export function CompanyDashboard() {
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="text-sm text-gray-600">
-              <div>123 Pine St. Trimming P4N 6A2</div>
+              <div></div>
               <div className="flex items-center gap-2 mt-1">
                 <Phone className="h-4 w-4" />
-                705-264-1111
-                <Badge className="bg-orange-100 text-orange-800 text-xs">Primary</Badge>
+                {currentSourceId || ""}
+                <Badge className="bg-orange-100 text-orange-800 text-xs"></Badge>
               </div>
               <div className="flex items-center gap-2 mt-1">
                 <Globe className="h-4 w-4" />
-                www.greenbuild.com
+               
               </div>
               <div className="flex items-center gap-2 mt-1">
                 <Mail className="h-4 w-4" />
-                info@greenbuild.com
+                
               </div>
             </div>
 
@@ -69,15 +98,15 @@ export function CompanyDashboard() {
                 <ChevronDown className="h-4 w-4" />
               </div>
               <div className="bg-gray-50 p-2 rounded text-sm">
-                <div className="font-medium">Sarah Lee</div>
-                <div className="text-gray-600">Direct Line: 705-264-2111</div>
-                <div className="text-gray-600">Cell # 705-264-3456</div>
-                <div className="text-gray-600">Email: sarahlee@greenbuild.com</div>
+                <div className="font-medium">Unknown</div>
+                <div className="text-gray-600">Direct Line: {currentSourceId || ""}</div>
+                <div className="text-gray-600">Cell # </div>
+                <div className="text-gray-600">Email: </div>
                 <div className="flex gap-2 mt-2">
-                  <Button size="sm" variant="outline" className="text-xs bg-transparent">
+                  <Button size="sm" variant="outline" className="text-xs bg-transparent" onClick={handleEditClick}>
                     Edit
                   </Button>
-                  <Button size="sm" variant="outline" className="text-xs bg-transparent">
+                  <Button size="sm" variant="outline" className="text-xs bg-transparent" onClick={handleAddClick}>
                     Add
                   </Button>
                 </div>
@@ -159,7 +188,7 @@ export function CompanyDashboard() {
 
         <div>
           <h2 className="text-xl font-semibold mb-4">All Communication History</h2>
-          <CommunicationLogTable />
+          <CommunicationLogTable sourceId={currentSourceId} />
         </div>
       </div>
 

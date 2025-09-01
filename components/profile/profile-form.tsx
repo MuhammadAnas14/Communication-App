@@ -10,15 +10,14 @@ import { Phone, Mail } from "lucide-react"
 
 export function ProfileForm() {
   const [formData, setFormData] = useState({
-    companyName: "Greenbuild Inc.",
-    profileId: "12345",
-    companyPhone: "(555) 123-4567",
-    website: "www.greenbuild.com",
-    emailAddress: "info@greenbuild.com",
-    category: "construction",
-    assignedTo: "john-doe",
+    companyName: "",
+    profileId: "",
+    companyPhone: "",
+    website: "",
+    emailAddress: "",
+    category: "",
+    assignedTo: "",
   })
-
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }

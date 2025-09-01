@@ -12,8 +12,8 @@ export function Navigation() {
 
   const navItems = [
     { href: "/communication-log", label: "Communication Log" },
-    { href: "/profile", label: "Profile" },
-    { href: "/company-details", label: "Company Details" },
+    // { href: "/profile", label: "Profile" },
+    // { href: "/company-details", label: "Company Details" },
     { href: "/knowledge-bases", label: "Knowledge Bases" },
   ]
 
