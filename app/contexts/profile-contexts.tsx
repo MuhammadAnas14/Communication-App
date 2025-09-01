@@ -37,8 +37,8 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     setCurrentSourceId(sourceId)
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
-      const response = await fetch(`${apiUrl}/api/profile/${sourceId}`)
+       const API_URL = "http://51.210.255.18:5000"
+      const response = await fetch(`${API_URL}/api/profile/${sourceId}`)
       const exists = response.ok
       setProfileExists(exists)
     } catch (error) {

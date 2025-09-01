@@ -174,8 +174,8 @@ export function KnowledgeBasesForm() {
     formData.append("file", file)
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
-      const response = await fetch(`${apiUrl}/kb_sync`, {
+      const API_URL = "http://51.210.255.18:5000"
+      const response = await fetch(`${API_URL}/kb_sync`, {
         method: "POST",
         body: formData,
       })

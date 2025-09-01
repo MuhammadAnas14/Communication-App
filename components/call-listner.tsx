@@ -7,7 +7,7 @@ export function CallListener() {
   const { openProfile } = useProfile()
 
   useEffect(() => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+    const API_URL = "http://51.210.255.18:5000"
     const eventSource = new EventSource(`${apiUrl}/api/events`)
 
     eventSource.addEventListener("incoming_call", (event) => {
