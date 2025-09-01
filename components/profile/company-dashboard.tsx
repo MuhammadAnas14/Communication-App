@@ -60,7 +60,7 @@ export function CompanyDashboard() {
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Company Name</CardTitle>
+              <CardTitle className="text-lg">Clear Sky Software</CardTitle>
             </div>
             <div className="flex gap-2 mt-2">
               <Badge variant="secondary" className="bg-blue-100 text-blue-800">
