@@ -1,9 +1,18 @@
+"use client"
+
+import { useState } from "react"
 import { CommunicationLogTable } from "@/components/communication-log/communication-log-table"
-import { CommunicationFilters } from "@/components/communication-log/communication-filters"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 
 export default function CommunicationLogPage() {
+  const [activeFilter, setActiveFilter] = useState("all")
+
+  const handleFilterChange = (filter: string) => {
+    console.log("[v0] Filter changed to:", filter)
+    setActiveFilter(filter)
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
@@ -17,8 +26,13 @@ export default function CommunicationLogPage() {
         </div>
       </div>
 
-      <CommunicationFilters />
-      <CommunicationLogTable />
+      <CommunicationLogTable
+        activeFilter={activeFilter}
+        onFilterChange={handleFilterChange} // Pass the filter change handler
+        onFilterUpdate={(callCount, emailCount) => {
+          // Filter counts are handled within the table component
+        }}
+      />
     </div>
   )
 }

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { Phone, Mail, ArrowRight } from "lucide-react"
 import { CommunicationPopup } from "./communication-popup"
+import { CommunicationFilters } from "./communication-filters"
 
 interface CallData {
   id: string
@@ -24,7 +25,11 @@ interface CallData {
 
 interface CommunicationLogTableProps {
   sourceId?: string | null
+  activeFilter?: string
+  onFilterChange?: (filter: string) => void // Added onFilterChange prop
+  onFilterUpdate?: (callCount: number, emailCount: number) => void
 }
+
 
 const sampleCallData: CallData[] = [
   {
@@ -222,12 +227,20 @@ const getIcon = (type: string, communicationType?: "call" | "email") => {
   }
 }
 
-export function CommunicationLogTable({ sourceId }: CommunicationLogTableProps) {
+
+export function CommunicationLogTable({
+  sourceId,
+  activeFilter = "all",
+  onFilterChange, // Added onFilterChange prop
+  onFilterUpdate,
+}: CommunicationLogTableProps) {
   const [selectedCommunication, setSelectedCommunication] = useState<any>(null)
   const [popupOpen, setPopupOpen] = useState(false)
   const [callData, setCallData] = useState<CallData[]>([])
   const [loading, setLoading] = useState(true)
   const [dataSource, setDataSource] = useState<"api" | "sample">("sample")
+  const [callCount, setCallCount] = useState(0)
+  const [emailCount, setEmailCount] = useState(0)
 
   console.log("[v0] CommunicationLogTable - received sourceId prop:", sourceId)
 
@@ -250,7 +263,7 @@ export function CommunicationLogTable({ sourceId }: CommunicationLogTableProps) 
   }
 
   const fetchEmails = async (sourceId?: string | null): Promise<CallData[]> => {
-    const EMAIL_SERVICE_URL = "http://51.210.255.18:5001"
+    const EMAIL_SERVICE_URL = "http://localhost:5001"
     const isV0Environment =
     EMAIL_SERVICE_URL ||
       (typeof window !== "undefined" && window.location.hostname.includes("vercel.app"))
@@ -301,12 +314,13 @@ export function CommunicationLogTable({ sourceId }: CommunicationLogTableProps) 
         sourceId: email.phone || email.sourceId || email.email,
         endPoint: email.person_name || "Email System",
         company: email.companyName || "",
-        disposition: email.status || "Delivered",
+        disposition: email.category,
         urgency: email.urgency_gpt || email.urgency || 1,
         aiSummary: `${email.category_gpt || email.category || "General"} | ${email.subcat_gpt || email.subcategory || "Email"}`,
         summary: email.summary,
         commId: email.commId || `COMM-${String(email.id).padStart(6, "0")}`,
         transcript: email.transcript || email.body || email.subject || "",
+        suggested_reply: email.suggested_reply || "",
         subcategory: email.subcat_gpt || email.subcategory || "Email",
         communicationType: "email" as const,
       }))
@@ -387,6 +401,14 @@ export function CommunicationLogTable({ sourceId }: CommunicationLogTableProps) 
         console.log("[v0] Fetched calls:", calls.length)
         console.log("[v0] Fetched emails:", emails.length)
 
+        
+        setCallCount(calls.length)
+        setEmailCount(emails.length)
+
+        if (onFilterUpdate) {
+          onFilterUpdate(calls.length, emails.length)
+        }
+
         const allCommunications = [...calls, ...emails].sort((a, b) => {
           // Convert date strings to comparable format for sorting
           const dateA = new Date(a.date).getTime()
@@ -417,6 +439,14 @@ export function CommunicationLogTable({ sourceId }: CommunicationLogTableProps) 
     fetchAllCommunications()
   }, [sourceId]) // Ensure sourceId is in dependency array
 
+  const filteredData = callData.filter((item) => {
+    if (activeFilter === "all") return true
+    if (activeFilter === "voice") return item.communicationType === "call"
+    if (activeFilter === "email") return item.communicationType === "email"
+    // For other filters (SMS, Web, Facebook, LinkedIn), return empty since no data available
+    return false
+  })
+
   const handleSummaryClick = (communication: any) => {
     setSelectedCommunication(communication)
     setPopupOpen(true)
@@ -432,6 +462,13 @@ export function CommunicationLogTable({ sourceId }: CommunicationLogTableProps) 
 
   return (
     <>
+       <CommunicationFilters
+        activeFilter={activeFilter}
+        onFilterChange={onFilterChange || (() => {})} // Pass the actual filter change handler
+        callCount={callCount}
+        emailCount={emailCount}
+      />
+      
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         {dataSource === "sample" && (
           <div className="bg-blue-50 border-b border-blue-200 px-4 py-2">
@@ -440,88 +477,107 @@ export function CommunicationLogTable({ sourceId }: CommunicationLogTableProps) 
               Python backend (port 5000) and email service (port 5001) to see real communication logs
               {sourceId && (
                 <span className="ml-2 text-xs">
-                  (Debug: sourceId="{sourceId}", matches={callData.length})
+                  (Debug: sourceId="{sourceId}", matches={filteredData.length})
                 </span>
               )}
             </div>
           </div>
         )}
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Source ID
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  End Point
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">(1)</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">(2)</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Company
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Disposition
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Urgency
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  AI Summary
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Comm ID
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {callData.map((item, index) => (
-                <tr key={index} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm text-gray-900">{item.date}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      {getIcon(item.type, item.communicationType)}
-                      <span className="text-sm text-gray-900">
-                        {item.communicationType === "email" ? "Email" : item.type}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-900">{item.sourceId}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-1 text-sm text-gray-900">
-                      {item.endPoint}
-                      {item.endPoint.includes("→") && <ArrowRight className="h-3 w-3" />}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3"></td>
-                  <td className="px-4 py-3"></td>
-                  <td className="px-4 py-3 text-sm text-gray-900">{item.company}</td>
-                  <td className="px-4 py-3 text-sm text-gray-900">{item.disposition}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <div className={cn("w-3 h-3 rounded-full", getUrgencyColor(item.urgency))}></div>
-                      <span className="text-xs text-gray-500">{getUrgencyLevel(item.urgency)}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <Button
-                      variant="link"
-                      size="sm"
-                      className="h-auto p-0 text-blue-600 hover:text-blue-800 text-sm"
-                      onClick={() => handleSummaryClick(item)}
-                    >
-                      Summary
-                    </Button>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-500">{item.commId}</td>
+
+        {filteredData.length === 0 && !loading && (
+          <div className="p-8 text-center">
+            <div className="text-gray-500">
+              {activeFilter === "all" ? "No communication logs found" : `No ${activeFilter} communications available`}
+            </div>
+          </div>
+        )}
+
+        {filteredData.length > 0 && (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Date
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Type
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Source ID
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    End Point
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    (1)
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    (2)
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Company
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Disposition
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Urgency
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    AI Summary
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Comm ID
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredData.map((item, index) => (
+                  <tr key={index} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 text-sm text-gray-900">{item.date}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        {getIcon(item.type, item.communicationType)}
+                        <span className="text-sm text-gray-900">
+                          {item.communicationType === "email" ? "Email" : item.type}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-900">{item.sourceId}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1 text-sm text-gray-900">
+                        {item.endPoint}
+                        {item.endPoint.includes("→") && <ArrowRight className="h-3 w-3" />}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3"></td>
+                    <td className="px-4 py-3"></td>
+                    <td className="px-4 py-3 text-sm text-gray-900">{item.company}</td>
+                    <td className="px-4 py-3 text-sm text-gray-900">{item.disposition}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className={cn("w-3 h-3 rounded-full", getUrgencyColor(item.urgency))}></div>
+                        <span className="text-xs text-gray-500">{getUrgencyLevel(item.urgency)}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="h-auto p-0 text-blue-600 hover:text-blue-800 text-sm"
+                        onClick={() => handleSummaryClick(item)}
+                      >
+                        Summary
+                      </Button>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-500">{item.commId}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       <CommunicationPopup communication={selectedCommunication} open={popupOpen} onOpenChange={setPopupOpen} />
