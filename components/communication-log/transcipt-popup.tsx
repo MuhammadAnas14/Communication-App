@@ -65,14 +65,21 @@ export function TranscriptPopup({ communication, open, onOpenChange }: Transcrip
             </div>
 
             <div className="flex-1 flex flex-col min-h-0 border-t pt-4">
-              <h3 className="text-sm font-medium mb-3 flex-shrink-0">Full {isEmail ? "Email" : "Transcript"}:</h3>
-              <ScrollArea className="flex-1 w-full border rounded-md">
-                <div className="p-4 whitespace-pre-wrap text-sm leading-relaxed break-words overflow-wrap-anywhere">
-                  {communication.transcript ||
-                    `No ${isEmail ? "email content" : "transcript"} available for this communication.`}
-                </div>
-              </ScrollArea>
-            </div>
+  <h3 className="text-sm font-medium mb-3 flex-shrink-0">
+    Full {isEmail ? "Email" : "Transcript"}:
+  </h3>
+  <div className="flex-1 min-h-0 border rounded-md bg-gray-50">
+    <div className="h-full max-h-[400px] overflow-y-auto">
+      <div className="p-4">
+        <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+          {communication.transcript ||
+            `No ${isEmail ? "email content" : "transcript"} available for this communication.`}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 
             <div className="flex-shrink-0 flex justify-end gap-2 pt-4 border-t">
               <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
