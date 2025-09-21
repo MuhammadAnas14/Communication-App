@@ -263,7 +263,7 @@ export function CommunicationLogTable({
   }
 
   const fetchEmails = async (sourceId?: string | null): Promise<CallData[]> => {
-    const EMAIL_SERVICE_URL = "http://localhost:5001"
+    const EMAIL_SERVICE_URL = "http://51.210.255.18:5001"
     const isV0Environment =
     EMAIL_SERVICE_URL ||
       (typeof window !== "undefined" && window.location.hostname.includes("vercel.app"))
@@ -468,7 +468,7 @@ export function CommunicationLogTable({
         callCount={callCount}
         emailCount={emailCount}
       />
-      
+
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         {dataSource === "sample" && (
           <div className="bg-blue-50 border-b border-blue-200 px-4 py-2">
