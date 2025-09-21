@@ -20,6 +20,11 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   const [profileExists, setProfileExists] = useState(false)
 
   useEffect(() => {
+    console.log("[v0] ProfileProvider - currentSourceId:", currentSourceId, "profileExists:", profileExists)
+  }, [currentSourceId, profileExists])
+
+
+  useEffect(() => {
     const handleIncomingCall = (event: CustomEvent) => {
       const { sourceId } = event.detail
       if (sourceId) {
@@ -40,7 +45,12 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
        const API_URL = "http://51.210.255.18:5000"
       const response = await fetch(`${API_URL}/api/profile/${sourceId}`)
       const exists = response.ok
+      console.log("[v0] ProfileProvider - Profile exists:", exists)
       setProfileExists(exists)
+
+      if (!exists) {
+        console.log("[v0] ProfileProvider - No profile found, using sourceId from call data:", sourceId)
+      }
     } catch (error) {
       console.log("[v0] Profile check failed, assuming new profile:", error)
       setProfileExists(false)

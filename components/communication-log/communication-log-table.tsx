@@ -19,6 +19,7 @@ interface CallData {
   commId: string
   transcript: string
   subcategory: string
+  communicationType?: "call" | "email" // Added to distinguish between calls and emails
 }
 
 interface CommunicationLogTableProps {
@@ -40,6 +41,7 @@ const sampleCallData: CallData[] = [
     transcript:
       "Customer called asking about roofing services and pricing for a new construction project. Discussed timeline and provided initial quote.",
     subcategory: "Inquiry/Demo",
+    communicationType: "call" as const,
   },
   {
     id: "COMM-002456",
@@ -54,6 +56,7 @@ const sampleCallData: CallData[] = [
     commId: "COMM-002456",
     transcript: "Follow-up email sent with detailed pricing information and project timeline for the roofing project.",
     subcategory: "Follow-up",
+    communicationType: "email" as const,
   },
   {
     id: "COMM-003789",
@@ -69,6 +72,7 @@ const sampleCallData: CallData[] = [
     transcript:
       "Customer reported issues with recent installation and requested immediate assistance. Transferred to technical support team.",
     subcategory: "Technical Issue",
+    communicationType: "call" as const,
   },
   {
     id: "COMM-004567",
@@ -83,6 +87,7 @@ const sampleCallData: CallData[] = [
     commId: "COMM-004567",
     transcript: "Inquiry about eco-friendly building materials and sustainable construction options.",
     subcategory: "Pricing/Demo",
+    communicationType: "call" as const,
   },
   {
     id: "COMM-005678",
@@ -97,6 +102,7 @@ const sampleCallData: CallData[] = [
     commId: "COMM-005678",
     transcript: "Customer satisfied with service delivery and provided positive feedback on recent project completion.",
     subcategory: "Deliver/Demo",
+    communicationType: "call" as const,
   },
   {
     id: "COMM-006789",
@@ -111,6 +117,7 @@ const sampleCallData: CallData[] = [
     commId: "COMM-006789",
     transcript: "Deposit request email sent for upcoming construction project with payment terms and schedule.",
     subcategory: "Deposit/Demo",
+    communicationType: "email" as const,
   },
   {
     id: "COMM-007890",
@@ -125,6 +132,7 @@ const sampleCallData: CallData[] = [
     commId: "COMM-007890",
     transcript: "Brief call, customer hung up after initial greeting. Possible wrong number or cold call.",
     subcategory: "Referral/Demo",
+    communicationType: "call" as const,
   },
   {
     id: "COMM-008901",
@@ -139,6 +147,55 @@ const sampleCallData: CallData[] = [
     commId: "COMM-008901",
     transcript: "Customer wants to book consultation for green building project. Transferred to booking specialist.",
     subcategory: "Book/Demo",
+    communicationType: "call" as const,
+  },
+]
+
+const sampleEmailData: CallData[] = [
+  {
+    id: "EMAIL-001",
+    date: "06-01 08:15AM",
+    type: "Email",
+    sourceId: "john.doe@techcorp.com",
+    endPoint: "John Doe",
+    company: "TechCorp Inc.",
+    disposition: "Delivered",
+    urgency: 3,
+    aiSummary: "Sales | Inquiry",
+    commId: "EMAIL-001",
+    transcript: "Inquiry about our enterprise software solutions and pricing for 100+ users.",
+    subcategory: "Inquiry",
+    communicationType: "email" as const,
+  },
+  {
+    id: "EMAIL-002",
+    date: "06-02 02:30PM",
+    type: "Email",
+    sourceId: "support@buildtech.com",
+    endPoint: "BuildTech Support",
+    company: "BuildTech Solutions",
+    disposition: "Delivered",
+    urgency: 4,
+    aiSummary: "Support | Technical Issue",
+    commId: "EMAIL-002",
+    transcript: "Urgent technical issue with API integration causing service disruption.",
+    subcategory: "Technical Issue",
+    communicationType: "email" as const,
+  },
+  {
+    id: "EMAIL-003",
+    date: "06-03 11:45AM",
+    type: "Email",
+    sourceId: "mary.smith@greenbuild.com",
+    endPoint: "Mary Smith",
+    company: "Greenbuild Inc.",
+    disposition: "Delivered",
+    urgency: 2,
+    aiSummary: "Sales | Follow-up",
+    commId: "EMAIL-003",
+    transcript: "Thank you for the demo yesterday. We'd like to proceed with the implementation.",
+    subcategory: "Follow-up",
+    communicationType: "email" as const,
   },
 ]
 
@@ -153,10 +210,12 @@ const getUrgencyLevel = (urgency: number) => {
   return `Level ${urgency}`
 }
 
-const getIcon = (type: string) => {
+const getIcon = (type: string, communicationType?: "call" | "email") => {
   const iconClass = "h-4 w-4"
 
-  if (type === "Out") {
+  if (communicationType === "email" || type === "Email") {
+    return <Mail className={iconClass} />
+  } else if (type === "Out") {
     return <Mail className={iconClass} />
   } else {
     return <Phone className={iconClass} />
@@ -169,6 +228,8 @@ export function CommunicationLogTable({ sourceId }: CommunicationLogTableProps) 
   const [callData, setCallData] = useState<CallData[]>([])
   const [loading, setLoading] = useState(true)
   const [dataSource, setDataSource] = useState<"api" | "sample">("sample")
+
+  console.log("[v0] CommunicationLogTable - received sourceId prop:", sourceId)
 
   const normalizeSourceId = (id: string): string => {
     // Remove all non-alphanumeric characters and convert to lowercase
@@ -188,73 +249,173 @@ export function CommunicationLogTable({ sourceId }: CommunicationLogTableProps) 
     return false
   }
 
-  useEffect(() => {
-    const fetchCalls = async () => {
-      const API_URL = "http://51.210.255.18:5000"
-      const isV0Environment =
-        !API_URL || (typeof window !== "undefined" && window.location.hostname.includes("vercel.app"))
+  const fetchEmails = async (sourceId?: string | null): Promise<CallData[]> => {
+    const EMAIL_SERVICE_URL = "http://51.210.255.18:5001"
+    const isV0Environment =
+    EMAIL_SERVICE_URL ||
+      (typeof window !== "undefined" && window.location.hostname.includes("vercel.app"))
 
-      console.log("[v0] Filtering calls for sourceId:", sourceId)
-      console.log("[v0] API_URL:", API_URL)
-      console.log("[v0] isV0Environment:", isV0Environment)
+    if (!isV0Environment) {
+      console.log("[v0] Using sample email data - email service not configured")
+      const filteredEmails = sourceId
+        ? sampleEmailData.filter((email) => {
+            const matches = sourceIdsMatch(email.sourceId, sourceId)
+            console.log("[v0] Email comparing:", email.sourceId, "with", sourceId, "matches:", matches)
+            return matches
+          })
+        : sampleEmailData
 
-      if (isV0Environment) {
-        const filteredData = sourceId
-          ? sampleCallData.filter((call) => {
-              const matches = sourceIdsMatch(call.sourceId, sourceId)
-              console.log("[v0] Comparing:", call.sourceId, "with", sourceId, "matches:", matches)
-              return matches
-            })
-          : sampleCallData
+      console.log("[v0] Filtered sample email data count:", filteredEmails.length)
+      return filteredEmails
+    }
 
-        console.log("[v0] Filtered data count:", filteredData.length)
-        setCallData(filteredData)
-        setDataSource("sample")
-        setLoading(false)
-        return
+    try {
+      const endpoint = sourceId ? `/api/emails/${encodeURIComponent(sourceId)}` : "/api/emails"
+      console.log("[v0] Fetching emails from:", `${EMAIL_SERVICE_URL}${endpoint}`)
+
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout for email service
+
+      const response = await fetch(`${EMAIL_SERVICE_URL}${endpoint}`, {
+        signal: controller.signal,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        console.log("[v0] Email API response not ok:", response.status, response.statusText)
+        throw new Error(`Email service error: ${response.status}`)
       }
 
+      const emailData = await response.json()
+      console.log("[v0] Email data received:", emailData)
+
+      // Transform email data to match CallData interface
+      return emailData.map((email: any) => ({
+        id: email.commId || `COMM-${String(email.id).padStart(6, "0")}`,
+        date: email.timestamp || "Unknown Date",
+        type: "In",
+        sourceId: email.phone || email.sourceId || email.email,
+        endPoint: email.person_name || "Email System",
+        company: email.companyName || "",
+        disposition: email.status || "Delivered",
+        urgency: email.urgency_gpt || email.urgency || 1,
+        aiSummary: `${email.category_gpt || email.category || "General"} | ${email.subcat_gpt || email.subcategory || "Email"}`,
+        summary: email.summary,
+        commId: email.commId || `COMM-${String(email.id).padStart(6, "0")}`,
+        transcript: email.transcript || email.body || email.subject || "",
+        subcategory: email.subcat_gpt || email.subcategory || "Email",
+        communicationType: "email" as const,
+      }))
+    } catch (error) {
+      console.error("[v0] Error fetching emails:", error)
+      console.log("[v0] Falling back to sample email data")
+
+      const filteredEmails = sourceId
+        ? sampleEmailData.filter((email) => sourceIdsMatch(email.sourceId, sourceId))
+        : sampleEmailData
+
+      console.log("[v0] Using sample email fallback, filtered count:", filteredEmails.length)
+      return filteredEmails
+    }
+  }
+
+  const fetchCalls = async (sourceId?: string | null): Promise<CallData[]> => {
+    const API_URL = "http://51.210.255.18:5000"
+    const isV0Environment =
+      !API_URL || (typeof window !== "undefined" && window.location.hostname.includes("vercel.app"))
+
+    if (isV0Environment) {
+      const filteredData = sourceId
+        ? sampleCallData.filter((call) => {
+            const matches = sourceIdsMatch(call.sourceId, sourceId)
+            console.log("[v0] Comparing:", call.sourceId, "with", sourceId, "matches:", matches)
+            return matches
+          })
+        : sampleCallData
+
+      console.log("[v0] Filtered call data count:", filteredData.length)
+      return filteredData.map((call) => ({ ...call, communicationType: "call" as const }))
+    }
+
+    try {
+      const endpoint = sourceId ? `/api/calls/${encodeURIComponent(sourceId)}` : "/api/calls"
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+
+      console.log("[v0] Fetching calls from:", `${API_URL}${endpoint}`)
+
+      const response = await fetch(`${API_URL}${endpoint}`, {
+        signal: controller.signal,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        console.log("[v0] Call API response not ok:", response.status, response.statusText)
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      console.log("[v0] Call API data received:", data)
+      return (data.calls || []).map((call: any) => ({ ...call, communicationType: "call" as const }))
+    } catch (err) {
+      console.error("[v0] Error fetching calls:", err)
+      const filteredData = sourceId
+        ? sampleCallData.filter((call) => sourceIdsMatch(call.sourceId, sourceId))
+        : sampleCallData
+      console.log("[v0] Using sample call data fallback, filtered count:", filteredData.length)
+      return filteredData.map((call) => ({ ...call, communicationType: "call" as const }))
+    }
+  }
+
+  useEffect(() => {
+    console.log("[v0] CommunicationLogTable useEffect triggered with sourceId:", sourceId)
+
+    const fetchAllCommunications = async () => {
+      setLoading(true)
+
       try {
-        const endpoint = sourceId ? `/api/calls/${encodeURIComponent(sourceId)}` : "/api/calls"
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+        const [calls, emails] = await Promise.all([fetchCalls(sourceId), fetchEmails(sourceId)])
 
-        console.log("[v0] Fetching from:", `${API_URL}${endpoint}`)
+        console.log("[v0] Fetched calls:", calls.length)
+        console.log("[v0] Fetched emails:", emails.length)
 
-        const response = await fetch(`${API_URL}${endpoint}`, {
-          signal: controller.signal,
-          headers: {
-            "Content-Type": "application/json",
-          },
+        const allCommunications = [...calls, ...emails].sort((a, b) => {
+          // Convert date strings to comparable format for sorting
+          const dateA = new Date(a.date).getTime()
+          const dateB = new Date(b.date).getTime()
+          return dateB - dateA // Most recent first
         })
 
-        clearTimeout(timeoutId)
+        console.log("[v0] Combined communications count:", allCommunications.length)
+        setCallData(allCommunications)
 
-        if (!response.ok) {
-          console.log("[v0] API response not ok:", response.status, response.statusText)
-          throw new Error(`HTTP error! status: ${response.status}`)
-        }
-
-        const data = await response.json()
-        console.log("[v0] API data received:", data)
-        setCallData(data.calls || [])
-        setDataSource("api")
-      } catch (err) {
-        console.error("[v0] Error fetching calls:", err)
+        const hasRealCallData = calls.some((call) => !sampleCallData.includes(call))
+        const hasRealEmailData = emails.some((email) => !sampleEmailData.includes(email))
+        const hasRealData = hasRealCallData || hasRealEmailData
+        setDataSource(hasRealData ? "api" : "sample")
+      } catch (error) {
+        console.error("[v0] Error fetching communications:", error)
+        // Fallback to sample data
         const filteredData = sourceId
           ? sampleCallData.filter((call) => sourceIdsMatch(call.sourceId, sourceId))
           : sampleCallData
-        console.log("[v0] Using sample data fallback, filtered count:", filteredData.length)
-        setCallData(filteredData)
+        setCallData(filteredData.map((call) => ({ ...call, communicationType: "call" as const })))
         setDataSource("sample")
       } finally {
         setLoading(false)
       }
     }
 
-    fetchCalls()
-  }, [])
-
+    fetchAllCommunications()
+  }, [sourceId]) // Ensure sourceId is in dependency array
 
   const handleSummaryClick = (communication: any) => {
     setSelectedCommunication(communication)
@@ -276,7 +437,12 @@ export function CommunicationLogTable({ sourceId }: CommunicationLogTableProps) 
           <div className="bg-blue-50 border-b border-blue-200 px-4 py-2">
             <div className="text-blue-800 text-sm">
               📋 Showing {sourceId ? `filtered sample data for ${sourceId}` : "sample communication data"} - Connect
-              Python backend to see real call logs
+              Python backend (port 5000) and email service (port 5001) to see real communication logs
+              {sourceId && (
+                <span className="ml-2 text-xs">
+                  (Debug: sourceId="{sourceId}", matches={callData.length})
+                </span>
+              )}
             </div>
           </div>
         )}
@@ -317,8 +483,10 @@ export function CommunicationLogTable({ sourceId }: CommunicationLogTableProps) 
                   <td className="px-4 py-3 text-sm text-gray-900">{item.date}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
-                      {getIcon(item.type)}
-                      <span className="text-sm text-gray-900">{item.type}</span>
+                      {getIcon(item.type, item.communicationType)}
+                      <span className="text-sm text-gray-900">
+                        {item.communicationType === "email" ? "Email" : item.type}
+                      </span>
                     </div>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-900">{item.sourceId}</td>

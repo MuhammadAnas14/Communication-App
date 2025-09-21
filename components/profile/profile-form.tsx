@@ -1,14 +1,16 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Phone, Mail } from "lucide-react"
+import { useProfile } from "../../app/contexts/profile-contexts"
 
 export function ProfileForm() {
+  const { currentSourceId, profileExists } = useProfile()
   const [formData, setFormData] = useState({
     companyName: "",
     profileId: "",
@@ -18,6 +20,19 @@ export function ProfileForm() {
     category: "",
     assignedTo: "",
   })
+
+  useEffect(() => {
+    console.log("[v0] ProfileForm - currentSourceId:", currentSourceId, "profileExists:", profileExists)
+
+    if (currentSourceId && !profileExists) {
+      console.log("[v0] ProfileForm - Populating phone fields with sourceId:", currentSourceId)
+      setFormData((prev) => ({
+        ...prev,
+        companyPhone: currentSourceId,
+      }))
+    }
+  }, [currentSourceId, profileExists])
+
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
@@ -123,10 +138,6 @@ export function ProfileForm() {
                   className="w-full"
                 />
               </div>
-            </div>
-
-            {/* Third Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="emailAddress" className="text-sm font-medium text-gray-700">
                   Email Address
@@ -139,6 +150,10 @@ export function ProfileForm() {
                   className="w-full"
                 />
               </div>
+            </div>
+
+            {/* Fourth Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="category" className="text-sm font-medium text-gray-700">
                   Category
@@ -155,10 +170,6 @@ export function ProfileForm() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-
-            {/* Fourth Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="assignedTo" className="text-sm font-medium text-gray-700">
                   Assigned To
@@ -175,7 +186,6 @@ export function ProfileForm() {
                   </SelectContent>
                 </Select>
               </div>
-              <div></div>
             </div>
 
             {/* Action Buttons */}

@@ -18,17 +18,17 @@ export function CommunicationPopup({ communication, open, onOpenChange }: Commun
   if (!communication) return null
 
   const isIncoming = communication.type === "In"
-  const isEmail = communication.icon === "email"
-
+  const isEmail = communication.communicationType === "email"
+  
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between">
-              <span>Sample Summary (POP UP)</span>
+              <span>Communication Summary</span>
               <Badge variant="outline" className="text-xs">
-                {isIncoming ? "INCOMING CALL" : "OUTGOING EMAIL"}
+                {isEmail ? "EMAIL" : isIncoming ? "INCOMING CALL" : "OUTGOING CALL"}
               </Badge>
             </DialogTitle>
           </DialogHeader>
@@ -40,23 +40,23 @@ export function CommunicationPopup({ communication, open, onOpenChange }: Commun
                 <p className="text-xs text-gray-500">{communication.date}</p>
               </div>
               <div className="text-right text-xs text-gray-500">
-                <p>Comm ID - {communication.id}</p>
-                <p>Category: {communication.category || "Sales"}</p>
-                <p>Sub-Category: {communication.subCategory || (isIncoming ? "Inquiry/Demo" : "Book/Demo")}</p>
+                <p>Comm ID - {communication.commId}</p>
+                <p>Category: {communication.aiSummary?.split(" | ")[0] || "General"}</p>
+                <p>Sub-Category: {communication.subcategory || communication.aiSummary?.split(" | ")[1] || "N/A"}</p>
                 {communication.company && <p>Company: {communication.company}</p>}
                 {communication.sourceId && <p>Source ID: {communication.sourceId}</p>}
                 {communication.urgency && (
                   <Badge
                     variant="outline"
                     className={`text-xs mt-1 ${
-                      communication.urgency === "High"
+                      communication.urgency >= 4
                         ? "border-red-500 text-red-500"
-                        : communication.urgency === "Medium"
-                          ? "border-yellow-500 text-yellow-500"
+                        : communication.urgency >= 3
+                          ? "border-blue-500 text-blue-500"
                           : "border-green-500 text-green-500"
                     }`}
                   >
-                    {communication.urgency} Priority
+                    Level {communication.urgency} Priority
                   </Badge>
                 )}
               </div>
@@ -65,7 +65,7 @@ export function CommunicationPopup({ communication, open, onOpenChange }: Commun
             <div>
               <p className="text-sm font-medium mb-2">Summary:</p>
               <div className="space-y-2 text-sm text-gray-700">
-                <p>{communication.aiSummary || communication.summary || "No summary available"}</p>
+                <p>{communication.summary || communication.aiSummary || "No summary available"}</p>
 
                 {communication.tasks && communication.tasks.length > 0 && (
                   <div className="mt-3">
@@ -74,21 +74,6 @@ export function CommunicationPopup({ communication, open, onOpenChange }: Commun
                         {index + 1}st Task: {task}
                       </p>
                     ))}
-                  </div>
-                )}
-
-                {isEmail && communication.emailDetails && (
-                  <div className="space-y-2">
-                    {communication.emailDetails.subject && (
-                      <p>
-                        <strong>Subject Line:</strong> {communication.emailDetails.subject}
-                      </p>
-                    )}
-                    {communication.emailDetails.body && (
-                      <div className="bg-gray-50 p-3 rounded text-sm">
-                        <p>{communication.emailDetails.body}</p>
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
