@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { Phone, Mail, ArrowRight } from "lucide-react"
 import { CommunicationPopup } from "./communication-popup"
-import { CommunicationFilters } from "./communication-filters"
+import { CommunicationFilters } from "./communication-filters" // Added import for CommunicationFilters
+import { useProfile } from "../../app/contexts/profile-contexts" // Added useProfile import
+import { useRouter } from "next/navigation" // Added useRouter import
 
 interface CallData {
   id: string
@@ -29,7 +31,6 @@ interface CommunicationLogTableProps {
   onFilterChange?: (filter: string) => void // Added onFilterChange prop
   onFilterUpdate?: (callCount: number, emailCount: number) => void
 }
-
 
 const sampleCallData: CallData[] = [
   {
@@ -242,6 +243,10 @@ export function CommunicationLogTable({
   const [callCount, setCallCount] = useState(0)
   const [emailCount, setEmailCount] = useState(0)
 
+
+  const { openProfile } = useProfile()
+  const router = useRouter()
+
   console.log("[v0] CommunicationLogTable - received sourceId prop:", sourceId)
 
   const normalizeSourceId = (id: string): string => {
@@ -265,17 +270,17 @@ export function CommunicationLogTable({
   const fetchEmails = async (sourceId?: string | null): Promise<CallData[]> => {
     const EMAIL_SERVICE_URL = "http://51.210.255.18:5001"
     const isV0Environment =
-    EMAIL_SERVICE_URL ||
+      EMAIL_SERVICE_URL ||
       (typeof window !== "undefined" && window.location.hostname.includes("vercel.app"))
 
     if (!isV0Environment) {
       console.log("[v0] Using sample email data - email service not configured")
       const filteredEmails = sourceId
         ? sampleEmailData.filter((email) => {
-            const matches = sourceIdsMatch(email.sourceId, sourceId)
-            console.log("[v0] Email comparing:", email.sourceId, "with", sourceId, "matches:", matches)
-            return matches
-          })
+          const matches = sourceIdsMatch(email.sourceId, sourceId)
+          console.log("[v0] Email comparing:", email.sourceId, "with", sourceId, "matches:", matches)
+          return matches
+        })
         : sampleEmailData
 
       console.log("[v0] Filtered sample email data count:", filteredEmails.length)
@@ -345,10 +350,10 @@ export function CommunicationLogTable({
     if (isV0Environment) {
       const filteredData = sourceId
         ? sampleCallData.filter((call) => {
-            const matches = sourceIdsMatch(call.sourceId, sourceId)
-            console.log("[v0] Comparing:", call.sourceId, "with", sourceId, "matches:", matches)
-            return matches
-          })
+          const matches = sourceIdsMatch(call.sourceId, sourceId)
+          console.log("[v0] Comparing:", call.sourceId, "with", sourceId, "matches:", matches)
+          return matches
+        })
         : sampleCallData
 
       console.log("[v0] Filtered call data count:", filteredData.length)
@@ -401,7 +406,6 @@ export function CommunicationLogTable({
         console.log("[v0] Fetched calls:", calls.length)
         console.log("[v0] Fetched emails:", emails.length)
 
-        
         setCallCount(calls.length)
         setEmailCount(emails.length)
 
@@ -452,6 +456,13 @@ export function CommunicationLogTable({
     setPopupOpen(true)
   }
 
+
+  const handleSourceIdClick = (clickedSourceId: string) => {
+    console.log("[v0] Source ID clicked:", clickedSourceId)
+    router.push(`/profile?sourceId=${encodeURIComponent(clickedSourceId)}`)
+  }
+
+
   if (loading) {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
@@ -462,9 +473,9 @@ export function CommunicationLogTable({
 
   return (
     <>
-       <CommunicationFilters
+      <CommunicationFilters
         activeFilter={activeFilter}
-        onFilterChange={onFilterChange || (() => {})} // Pass the actual filter change handler
+        onFilterChange={onFilterChange || (() => { })} // Pass the actual filter change handler
         callCount={callCount}
         emailCount={emailCount}
       />
@@ -544,7 +555,14 @@ export function CommunicationLogTable({
                         </span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">{item.sourceId}</td>
+                    <td className="px-4 py-3 text-sm">
+                      <button
+                        onClick={() => handleSourceIdClick(item.sourceId)}
+                        className="text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer"
+                      >
+                        {item.sourceId}
+                      </button>
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1 text-sm text-gray-900">
                         {item.endPoint}
